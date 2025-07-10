@@ -3,15 +3,11 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
-// --- Registration Route ---
+// User Registration
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
   try {
-    const user = new User({
-      name,
-      email: email.toLowerCase().trim(),
-      password: password.trim(),
-    });
+    const user = new User({ name, email, password });
     await user.save();
     res.status(201).json(user);
   } catch (err) {
@@ -19,35 +15,30 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// --- Login Route ---
+// User Login with proper error handling
 router.post('/login', async (req, res) => {
-  const rawEmail = req.body.email;
-  const rawPassword = req.body.password;
+  const { email, password } = req.body;
 
-  const email = rawEmail?.toLowerCase().trim();
-  const password = rawPassword?.trim();
-
-  console.log("📥 Login request:");
-  console.log("Email:", email);
-  console.log("Password:", password);
+  // Check for empty fields
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
 
   try {
+    // Find user with matching credentials
     const user = await User.findOne({ email, password });
-
-    console.log("🔍 User found in DB:", user);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Return user if found
     res.json(user);
   } catch (err) {
-    console.error("❌ Server error during login:", err);
+    // Log exact error to server logs
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-
 export default router;
-
-
